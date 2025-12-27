@@ -65,6 +65,7 @@ services:
       - env/dev/.env
     volumes:
       - db-data:/var/lib/postgresql/data   # Persistencia real
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - backend_net
     restart: unless-stopped
