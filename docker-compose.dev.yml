@@ -1,15 +1,16 @@
-#Frontend container
-
 services:
+  # ==========================
+  # Frontend container
+  # ==========================
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
     container_name: wellness-frontend-container
     ports:
-      - "8080:80"           # Host 8080 → contenedor 80
+      - "8080:80"                 # Host 8080 → contenedor 80
     networks:
-      - web_net
+      - web_net                   # Red privada web
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost"]
@@ -17,8 +18,25 @@ services:
       timeout: 3s
       retries: 3
 
+  # ==========================
+  # Nginx Reverse Proxy
+  # ==========================
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile.dev
+    container_name: wellness-nginx-proxy
+    ports:
+      - "80:80"                   # Punto de entrada al sistema
+    depends_on:
+      - frontend                  # Espera a que frontend esté levantado
+    networks:
+      - web_net                   # Misma red que frontend
+    restart: unless-stopped
+
+# ==========================
+# Networks
+# ==========================
 networks:
   web_net:
     driver: bridge
-
-
