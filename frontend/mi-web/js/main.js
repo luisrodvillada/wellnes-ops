@@ -1,54 +1,70 @@
-async function loadEntries() {
-    const response = await fetch("/api/entries");
-    const entries = await response.json();
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("JS cargado correctamente");
 
+    const form = document.getElementById("entry-form");
     const list = document.getElementById("entries-list");
-    list.innerHTML = "";
 
-    entries.forEach(entry => {
-        const li = document.createElement("li");
-        li.className = "list-group-item";
-        li.textContent = `${entry.title} — ${entry.description || ""}`;
-        list.appendChild(li);
-    });
-}
+    console.log("form:", form);
+    console.log("list:", list);
 
-document.addEventListener("DOMContentLoaded", loadEntries);
+    // ==========================
+    // Load entries from backend
+    // ==========================
+    async function loadEntries() {
+        try {
+            const response = await fetch("/api/entries");
+            const entries = await response.json();
 
-const form = document.getElementById("entry-form");
+            list.innerHTML = "";
 
-form.addEventListener("submit", async (event) => {
-    event.preventDefault();
+            entries.forEach(entry => {
+                const li = document.createElement("li");
+                li.className = "list-group-item";
+                li.textContent = `${entry.title} — ${entry.description || ""}`;
+                list.appendChild(li);
+            });
 
-    const title = document.getElementById("entry-title").value.trim();
-    const description = document.getElementById("entry-description").value.trim();
-
-    if (!title) {
-        alert("Title is required");
-        return;
+        } catch (error) {
+            console.error("Error loading entries:", error);
+        }
     }
 
-    try {
-        const response = await fetch("/api/entries", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ title, description })
-        });
+    // Cargar datos al arrancar
+    loadEntries();
 
-        if (!response.ok) {
-            throw new Error("Failed to save entry");
+    // ==========================
+    // Handle form submit
+    // ==========================
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const title = document.getElementById("entry-title").value.trim();
+        const description = document.getElementById("entry-description").value.trim();
+
+        if (!title) {
+            alert("Title is required");
+            return;
         }
 
-        // Limpiar formulario
-        form.reset();
+        try {
+            const response = await fetch("/api/entries", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ title, description })
+            });
 
-        // Recargar lista de entries
-        loadEntries();
+            if (!response.ok) {
+                throw new Error("Failed to save entry");
+            }
 
-    } catch (error) {
-        console.error(error);
-        alert("Error saving entry");
-    }
+            form.reset();
+            loadEntries();
+
+        } catch (error) {
+            console.error("Error saving entry:", error);
+            alert("Error saving entry");
+        }
+    });
 });

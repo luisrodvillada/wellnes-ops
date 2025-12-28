@@ -86,7 +86,7 @@ https://templatemo.com/tm-556-catalog-z
                 <div class="col-md-8 col-lg-6">
                     <h3 class="tm-text-primary mb-3">Add New Entry</h3>
 
-                    <form id="entry-form">
+                    <form id="entry-form" novalidate>
                         <div class="mb-3">
                             <input type="text" class="form-control" id="entry-title" placeholder="Title" required>
                         </div>
@@ -376,7 +376,8 @@ https://templatemo.com/tm-556-catalog-z
         </div>
     </footer>
 
-    <script src="js/plugins.js"></script>
+    <script src="/js/plugins.js"></script>
+    <script src="/js/main.js"></script>
     <script>
         $(window).on("load", function () {
             $('body').addClass('loaded');
