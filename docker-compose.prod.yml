@@ -1,0 +1,29 @@
+services:
+  frontend:
+    image: wellness-frontend:prod
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: wellness-frontend
+    networks:
+      - web_net
+    restart: unless-stopped
+
+
+  nginx:
+    image: wellness-nginx:prod
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile.prod
+    container_name: wellness-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+    networks:
+      - web_net
+    restart: unless-stopped
+
+networks:
+  web_net:
+    driver: bridge
