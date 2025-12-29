@@ -9,7 +9,6 @@ services:
       - web_net
     restart: unless-stopped
 
-
   nginx:
     image: wellness-nginx:prod
     build:
@@ -20,10 +19,31 @@ services:
       - "80:80"
     depends_on:
       - frontend
+      - backend
     networks:
       - web_net
+      - backend_net
     restart: unless-stopped
+
+  backend:
+    image: wellness-backend:prod
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: wellness-backend-prod
+    env_file:
+      - env/prod/.env
+    networks:
+      - backend_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
 
 networks:
   web_net:
+    driver: bridge
+  backend_net:
     driver: bridge
