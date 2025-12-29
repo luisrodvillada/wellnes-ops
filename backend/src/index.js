@@ -69,6 +69,33 @@ app.post("/entries", async (req, res) => {
     }
 });
 
+// ==========================
+// DELETE entry by ID
+// ==========================
+app.delete("/entries/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await pool.query(
+            "DELETE FROM entries WHERE id = $1 RETURNING *",
+            [id]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Entry not found" });
+        }
+
+        res.json({
+            status: "deleted",
+            entry: result.rows[0],
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Database error" });
+    }
+});
+
+
 
 app.listen(PORT, () => {
     console.log(`Backend running on port ${PORT}`);

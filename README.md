@@ -116,4 +116,6 @@ A día 27/12
 Tenemos los 4 contenedores funcionando, hemos cargado la web en el puerto 8080 luego en el 80  luego probamos el backend en localhost/api/health
 y además de eso tenemos BD postgres en red privada misma red que backend, volumenes persistentes en la BD
 
+Siguiente PUT /entries/:id (update)
+
 
