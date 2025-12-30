@@ -1,4 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
+    let editingEntryId = null;
+
     console.log("JS cargado correctamente");
 
     const form = document.getElementById("entry-form");
@@ -11,23 +13,33 @@ document.addEventListener("DOMContentLoaded", () => {
     // Load entries from backend
     // ==========================
     async function loadEntries() {
-        try {
-            const response = await fetch("/api/entries");
-            const entries = await response.json();
+        const response = await fetch("/api/entries");
+        const entries = await response.json();
 
-            list.innerHTML = "";
+        const list = document.getElementById("entries-list");
+        list.innerHTML = "";
 
-            entries.forEach(entry => {
-                const li = document.createElement("li");
-                li.className = "list-group-item";
-                li.textContent = `${entry.title} — ${entry.description || ""}`;
-                list.appendChild(li);
+        entries.forEach(entry => {
+            const li = document.createElement("li");
+            li.className = "list-group-item d-flex justify-content-between align-items-center";
+
+            li.innerHTML = `
+            <span>
+                <strong>${entry.title}</strong> — ${entry.description || ""}
+            </span>
+            <button class="btn btn-sm btn-warning">Edit</button>
+        `;
+
+            li.querySelector("button").addEventListener("click", () => {
+                document.getElementById("entry-title").value = entry.title;
+                document.getElementById("entry-description").value = entry.description || "";
+                editingEntryId = entry.id;
             });
 
-        } catch (error) {
-            console.error("Error loading entries:", error);
-        }
+            list.appendChild(li);
+        });
     }
+
 
     // Cargar datos al arrancar
     loadEntries();
@@ -46,25 +58,28 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        try {
-            const response = await fetch("/api/entries", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ title, description })
-            });
+        const method = editingEntryId ? "PUT" : "POST";
+        const url = editingEntryId
+            ? `/api/entries/${editingEntryId}`
+            : "/api/entries";
 
-            if (!response.ok) {
-                throw new Error("Failed to save entry");
-            }
+        const response = await fetch(url, {
+            method,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ title, description })
+        });
 
-            form.reset();
-            loadEntries();
-
-        } catch (error) {
-            console.error("Error saving entry:", error);
+        if (!response.ok) {
             alert("Error saving entry");
+            return;
         }
+
+        // Reset estado
+        editingEntryId = null;
+        form.reset();
+        loadEntries();
     });
+
 });

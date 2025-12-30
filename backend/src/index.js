@@ -95,6 +95,37 @@ app.delete("/entries/:id", async (req, res) => {
     }
 });
 
+// ==========================
+// UPDATE entry
+// ==========================
+app.put("/entries/:id", async (req, res) => {
+    const { id } = req.params;
+    const { title, description } = req.body;
+
+    if (!title) {
+        return res.status(400).json({ error: "Title is required" });
+    }
+
+    try {
+        const result = await pool.query(
+            `UPDATE entries
+             SET title = $1,
+                 description = $2
+             WHERE id = $3
+             RETURNING *`,
+            [title, description, id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Entry not found" });
+        }
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Database error" });
+    }
+});
 
 
 app.listen(PORT, () => {
