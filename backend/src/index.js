@@ -4,7 +4,42 @@ const pool = require("./db");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Protect path
+
+const auth = require("./middleware/auth");
+
 app.use(express.json());
+
+//EndPoint login
+const jwt = require("jsonwebtoken");
+const { USER } = require("./auth");
+
+//Endpoint
+
+app.post("/login", (req, res) => {
+    const { username, password } = req.body;
+
+    if (username !== USER.username) {
+        return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const validPassword = require("bcryptjs").compareSync(
+        password,
+        USER.passwordHash
+    );
+
+    if (!validPassword) {
+        return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+        { id: USER.id, username: USER.username },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    res.json({ token });
+});
 
 
 // Healthcheck simple (app viva)
@@ -49,7 +84,7 @@ app.get("/entries", async (req, res) => {
 // ==========================
 // CREATE new entry
 // ==========================
-app.post("/entries", async (req, res) => {
+app.post("/entries", auth, async (req, res) => {
     const { title, description } = req.body;
 
     if (!title) {
@@ -69,10 +104,71 @@ app.post("/entries", async (req, res) => {
     }
 });
 
+//Another PUT
+
+// ==========================
+// UPDATE entry (PUT)
+// ==========================
+app.put("/entries/:id", async (req, res) => {
+    const { id } = req.params;
+    const { title, description } = req.body;
+
+    if (!title) {
+        return res.status(400).json({ error: "Title is required" });
+    }
+
+    try {
+        const result = await pool.query(
+            `UPDATE entries
+             SET title = $1,
+                 description = $2
+             WHERE id = $3
+             RETURNING *`,
+            [title, description, id]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Entry not found" });
+        }
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Database error" });
+    }
+});
+
+
+//DELETE WITH JWT
+
+// ==========================
+// DELETE entry
+// ==========================
+app.delete("/entries/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await pool.query(
+            "DELETE FROM entries WHERE id = $1",
+            [id]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Entry not found" });
+        }
+
+        // 204 = borrado correcto sin contenido
+        res.status(204).send();
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Database error" });
+    }
+});
+
 // ==========================
 // DELETE entry by ID
 // ==========================
-app.delete("/entries/:id", async (req, res) => {
+app.delete("/entries/:id", auth, async (req, res) => {
     const { id } = req.params;
 
     try {
@@ -98,7 +194,7 @@ app.delete("/entries/:id", async (req, res) => {
 // ==========================
 // UPDATE entry
 // ==========================
-app.put("/entries/:id", async (req, res) => {
+app.put("/entries/:id", auth, async (req, res) => {
     const { id } = req.params;
     const { title, description } = req.body;
 
